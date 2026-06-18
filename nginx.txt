@@ -1,0 +1,46 @@
+sudo nano /etc/nginx/sites-available/node-app
+
+server {
+    listen 8085;
+    server_name _;
+
+    location /commands {
+        proxy_pass http://127.0.0;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+
+        # These three lines are critical to allow Chrome to stream the logs
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+
+        # Pass original IP details to Frontail
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Turn off buffering so logs appear instantly line-by-line
+        proxy_buffering off;
+    }
+}
+
+
+
+
+
+
+
+sudo ln -s /etc/nginx/sites-available/node-app /etc/nginx/sites-enabled/
+
+sudo rm /etc/nginx/sites-enabled/default
+
+sudo nginx -t
+
+sudo systemctl restart nginx
+

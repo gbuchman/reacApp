@@ -1,0 +1,89 @@
+
+For remote desktop connection use raspi-config and switch from Wayland to X11
+
+X2GO
+
+On pi
+sudo apt update
+sudo apt install xfce4 xfce4-goodies x2goserver x2goserver-xsession -y
+
+nano ~/.profile
+Scroll to the bottom and locate the line that says mesg n 2> /dev/null || true or simply mesg n.X2Go crashes if standard output is hijacked by this command during login. Replace that line entirely with:bashif tty -s; then
+  mesg n 2>/dev/null
+fi
+
+nano ~/.bashrc
+
+
+sudo apt update && sudo apt install remmina-plugin-vnc -y
+
+
+
+///////////////////////
+XDMC
+
+on pi edit 
+
+[XDMCPServer]
+enabled=true
+port=177
+[Seat:*]
+xserver-allow-tcp=true
+sudo nano /etc/lightdm/lightdm.conf
+Open /etc/ssh/sshd_config with root privileges.Ensure these two lines are present and uncommented:text
+X11Forwarding yes
+X11UseLocalhost yes
+sudo systemctl restart ssh
+
+[Ubuntu]
+xhost +192.168.2.26
+
+Xephyr -ac -query 192.168.2.45 -screen 2560x1440x16:1
+
+
+sudo nano /etc/nginx/sites-available/node-app
+
+server {
+    listen 8085;
+    server_name _;
+
+    location /commands {
+        proxy_pass http://127.0.0;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+
+        # These three lines are critical to allow Chrome to stream the logs
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+
+        # Pass original IP details to Frontail
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Turn off buffering so logs appear instantly line-by-line
+        proxy_buffering off;
+    }
+}
+
+
+
+
+
+
+
+sudo ln -s /etc/nginx/sites-available/node-app /etc/nginx/sites-enabled/
+
+sudo rm /etc/nginx/sites-enabled/default
+
+sudo nginx -t
+
+sudo systemctl restart nginx
+

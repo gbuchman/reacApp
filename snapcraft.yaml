@@ -1,0 +1,32 @@
+name: device-control
+base: core24
+version: '0.06'
+summary: Device Control Dashboard
+description: |
+  A React-based control dashboard for Red Diamonds fixture devices.
+
+grade: stable
+confinement: strict
+
+apps:
+  device-control:
+    command: bin/node $SNAP/server.js
+    daemon: simple
+    restart-condition: always
+    plugs:
+      - network
+      - network-bind
+
+parts:
+  app:
+    plugin: npm
+    source: .
+    npm-include-node: true
+    npm-node-version: "24"
+    override-build: |
+      snapcraftctl build
+      npm run build
+      mkdir -p "$SNAPCRAFT_PART_INSTALL"
+      cp -r build "$SNAPCRAFT_PART_INSTALL/"
+      cp server.js package.json "$SNAPCRAFT_PART_INSTALL/"
+      cp -r node_modules "$SNAPCRAFT_PART_INSTALL/"
