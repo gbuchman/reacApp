@@ -210,24 +210,10 @@ function ActionPanel({ onGetConfig, onGetLogLevel, onSaveEeprom, onRehome, logLe
           <button className="button-secondary" onClick={onSaveEeprom}>Save EEPROM</button>
           <button className="button-secondary button-reboot" onClick={onRehome}>Rehome</button>
         </div>
-
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <label className="action-label action-label-inline">
-            Log Level
-            <select value={logLevel} onChange={(e) => setLogLevel(e.target.value)}>
-              <option value="error">Error</option>
-              <option value="warn">Warn</option>
-              <option value="info">Info</option>
-              <option value="debug">Debug</option>
-              <option value="trace">Trace</option>
-            </select>
-          </label>
-          <button className="button-primary" onClick={onSetLogLevel}>Set</button>
-        </div>
       </div>
 
-      <div className="panel-row panel-row-wrap">
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className="panel-row panel-row-wrap" style={{ alignItems: "flex-end", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: '1 1 320px', minWidth: 240 }}>
           <label className="action-label">
             Motor °
             <input
@@ -240,21 +226,27 @@ function ActionPanel({ onGetConfig, onGetLogLevel, onSaveEeprom, onRehome, logLe
               step="1"
             />
           </label>
-          <button className="button-primary" onClick={onMotorMove}>Move Motor</button>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: '1 1 320px', minWidth: 240 }}>
           <label className="action-label">
             Command
             <input
               type="text"
               value={commandInput}
               onChange={(e) => setCommandInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onSendCommand();
+                }
+              }}
               placeholder="cmd args"
             />
           </label>
-          <button className="button-primary" onClick={onSendCommand}>Send Cmd</button>
         </div>
+
+        <button className="button-primary" style={{ flex: '0 0 auto', height: 'fit-content' }} onClick={onMotorMove}>Move Motor</button>
       </div>
     </section>
   );
