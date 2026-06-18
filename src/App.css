@@ -22,10 +22,10 @@ body {
 
 .panel-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 18px;
   overflow: hidden;
-  flex: 0 0 auto;
+  align-items: start;
 }
 
 .app-header {
@@ -72,9 +72,10 @@ body {
 
 .panel-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
   overflow: hidden;
+  align-items: start;
 }
 
 .panel {
@@ -216,9 +217,8 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.12);
   border-radius: 16px;
   padding: 14px;
-  height: 260px;
-  min-height: 260px;
-  max-height: 260px;
+  flex: 1 1 auto;
+  min-height: 120px;
   overflow-y: auto;
 
   font-size: 0.92rem;
@@ -233,6 +233,8 @@ body {
 .panel-control {
   display: flex;
   flex-direction: column;
+  min-height: 220px;
+  max-height: 300px;
 }
 
 .panel-log-block {
@@ -278,10 +280,9 @@ body {
   box-shadow: 0 24px 72px rgba(0, 0, 0, 0.18);
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
   overflow: hidden;
-  max-height: calc(100vh - 260px);
-  min-height: 320px;
+  min-height: 220px;
+  max-height: 300px;
 }
 
 .log-viewer-header {
@@ -316,7 +317,13 @@ body {
 }
 
 .panel-top {
-  grid-column: 1 / -1;
+  min-height: 232px;
+  max-height: 312px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  grid-column: auto;
 }
 
 .panel-control {
@@ -326,6 +333,10 @@ body {
 @media (max-width: 1280px) {
   .panel-control {
     grid-column: auto;
+  }
+
+  .panel-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
 }
 
