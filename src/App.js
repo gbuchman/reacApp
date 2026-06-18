@@ -203,51 +203,58 @@ function ControlPanel({ setConnection, logLevel, setLogLevel, onUpdateConfig, cl
 function ActionPanel({ onGetConfig, onGetLogLevel, onSaveEeprom, onRehome, logLevel, setLogLevel, onSetLogLevel, motorDegrees, setMotorDegrees, onMotorMove, commandInput, setCommandInput, onSendCommand }) {
   return (
     <section className="panel panel-top">
+      <div className="panel-row">
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <button className="button-secondary" onClick={onGetConfig}>Get Config</button>
+          <button className="button-secondary" onClick={onGetLogLevel}>Get Log Level</button>
+          <button className="button-secondary" onClick={onSaveEeprom}>Save EEPROM</button>
+          <button className="button-secondary button-reboot" onClick={onRehome}>Rehome</button>
+        </div>
+
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <label className="action-label action-label-inline">
+            Log Level
+            <select value={logLevel} onChange={(e) => setLogLevel(e.target.value)}>
+              <option value="error">Error</option>
+              <option value="warn">Warn</option>
+              <option value="info">Info</option>
+              <option value="debug">Debug</option>
+              <option value="trace">Trace</option>
+            </select>
+          </label>
+          <button className="button-primary" onClick={onSetLogLevel}>Set</button>
+        </div>
+      </div>
+
       <div className="panel-row panel-row-wrap">
-        <button className="button-secondary" onClick={onGetConfig}>Get Config</button>
-        <button className="button-secondary" onClick={onGetLogLevel}>Get Log Level</button>
-        <button className="button-secondary" onClick={onSaveEeprom}>Save EEPROM</button>
-        <button className="button-secondary button-reboot" onClick={onRehome}>Rehome</button>
-        <label className="action-label action-label-inline">
-          Log Level
-          <select value={logLevel} onChange={(e) => setLogLevel(e.target.value)}>
-            <option value="error">Error</option>
-            <option value="warn">Warn</option>
-            <option value="info">Info</option>
-            <option value="debug">Debug</option>
-            <option value="trace">Trace</option>
-          </select>
-        </label>
-        <button className="button-primary" onClick={onSetLogLevel}>
-          Set Log Level
-        </button>
-        <label className="action-label action-label-inline">
-          Motor °
-          <input
-            className="motor-input"
-            type="number"
-            value={motorDegrees}
-            onChange={(e) => setMotorDegrees(e.target.value)}
-            min="0"
-            max="360"
-            step="1"
-          />
-        </label>
-        <button className="button-primary" onClick={onMotorMove}>
-          Move Motor
-        </button>
-        <label className="action-label action-label-inline">
-          Command
-          <input
-            type="text"
-            value={commandInput}
-            onChange={(e) => setCommandInput(e.target.value)}
-            placeholder="cmd args"
-          />
-        </label>
-        <button className="button-primary" onClick={onSendCommand}>
-          Send Cmd
-        </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <label className="action-label">
+            Motor °
+            <input
+              className="motor-input"
+              type="number"
+              value={motorDegrees}
+              onChange={(e) => setMotorDegrees(e.target.value)}
+              min="0"
+              max="360"
+              step="1"
+            />
+          </label>
+          <button className="button-primary" onClick={onMotorMove}>Move Motor</button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <label className="action-label">
+            Command
+            <input
+              type="text"
+              value={commandInput}
+              onChange={(e) => setCommandInput(e.target.value)}
+              placeholder="cmd args"
+            />
+          </label>
+          <button className="button-primary" onClick={onSendCommand}>Send Cmd</button>
+        </div>
       </div>
     </section>
   );
