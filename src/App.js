@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./App.css";
 
-const API_URL = `http://192.168.2.49:3300/commands`;
-//const LOGS_STREAM_URL = `http://${window.location.hostname}:3300/logs/stream`;
-//const LOGS_TAIL_URL = `http://${window.location.hostname}:3300/logs/tail`;
-const LOGS_STREAM_URL = `http://192.168.2.49:3300/logs/stream`;
-const LOGS_TAIL_URL = `http://192.168.2.49:3300/logs/tail`;
+const API_URL = `http://${window.location.hostname}:3300/commands`;
+const LOGS_STREAM_URL = `http://${window.location.hostname}:3300/logs/stream`;
+const LOGS_TAIL_URL = `http://${window.location.hostname}:3300/logs/tail`;
+// const LOGS_STREAM_URL = `http://192.168.2.49:3300/logs/stream`;
+// const LOGS_TAIL_URL = `http://192.168.2.49:3300/logs/tail`;
 
 async function sendCommand(cmd, arg, timeoutMs = 5000) {
   const controller = new AbortController();
