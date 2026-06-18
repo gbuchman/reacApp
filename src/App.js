@@ -193,11 +193,6 @@ function ControlPanel({ setConnection, logLevel, setLogLevel, onUpdateConfig, cl
 
   return (
     <section className={`panel ${className || ""}`}>
-      <div className="panel-header">
-        <h3>Control</h3>
-      </div>
-
-
       <div className="panel-log">
         {readerOutput ? <code>{readerOutput}</code> : <code>{log}</code>}
       </div>
@@ -626,6 +621,21 @@ export default function App() {
           clearCommandOutput={() => setControlLog("")}
         />
 
+        <ControlPanel
+          className="panel-control"
+          setConnection={setConnected}
+          logLevel={logLevel}
+          setLogLevel={setLogLevel}
+          readerOutput={controlReaderOutput}
+          clearReaderOutput={() => setControlReaderOutput("")}
+          log={controlLog}
+          setLog={setControlLog}
+          onUpdateConfig={(config) => {
+            updateReaders(config);
+            if (config.logLevel) setLogLevel(String(config.logLevel));
+          }}
+        />
+
         <ActionPanel
           onGetConfig={handleGetConfig}
           onGetLogLevel={handleGetLogLevel}
@@ -640,21 +650,6 @@ export default function App() {
           commandInput={commandInput}
           setCommandInput={setCommandInput}
           onSendCommand={handleSendCommand}
-        />
-
-        <ControlPanel
-          className="panel-control"
-          setConnection={setConnected}
-          logLevel={logLevel}
-          setLogLevel={setLogLevel}
-          readerOutput={controlReaderOutput}
-          clearReaderOutput={() => setControlReaderOutput("")}
-          log={controlLog}
-          setLog={setControlLog}
-          onUpdateConfig={(config) => {
-            updateReaders(config);
-            if (config.logLevel) setLogLevel(String(config.logLevel));
-          }}
         />
       </main>
 

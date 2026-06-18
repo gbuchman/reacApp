@@ -313,12 +313,12 @@ body {
 }
 
 .panel-control {
-  grid-column: span 2;
+  grid-column: auto;
 }
 
 @media (max-width: 1280px) {
   .panel-control {
-    grid-column: span 1;
+    grid-column: auto;
   }
 }
 
