@@ -293,9 +293,9 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  height: var(--panel-height);
-  min-height: var(--panel-height);
-  max-height: var(--panel-height);
+  height: 45vh;
+  min-height: 45vh;
+  max-height: 45vh;
   box-sizing: border-box;
 }
 
