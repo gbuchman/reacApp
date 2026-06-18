@@ -222,6 +222,21 @@ function ActionPanel({ onGetConfig, onGetLogLevel, onSaveEeprom, onRehome, logLe
           Set Log Level
         </button>
         <label className="action-label action-label-inline">
+          Motor °
+          <input
+            className="motor-input"
+            type="number"
+            value={motorDegrees}
+            onChange={(e) => setMotorDegrees(e.target.value)}
+            min="0"
+            max="360"
+            step="1"
+          />
+        </label>
+        <button className="button-primary" onClick={onMotorMove}>
+          Move Motor
+        </button>
+        <label className="action-label action-label-inline">
           Command
           <input
             type="text"
