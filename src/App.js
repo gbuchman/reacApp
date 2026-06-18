@@ -107,7 +107,7 @@ function stripAnsiCodes(line) {
 
 
 
-function ReaderPanel({ readerId, setConnection, baud, setBaud, readerMode, setReaderMode, onReaderOutput, clearCommandOutput }) {
+function ReaderPanel({ className, readerId, setConnection, baud, setBaud, readerMode, setReaderMode, onReaderOutput, clearCommandOutput }) {
   const baudOptions = ["9600", "38400", "57600", "115200"];
   const modeOptions = ["wiegand", "osdp"];
   const normalizedMode = readerMode ? String(readerMode).toLowerCase() : "";
@@ -127,7 +127,7 @@ function ReaderPanel({ readerId, setConnection, baud, setBaud, readerMode, setRe
   };
 
   return (
-    <section className="panel">
+    <section className={`panel ${className || ""}`}>
       <div className="panel-header">
         <h3>Reader {readerId}</h3>
         <span className="badge">{normalizedMode.toUpperCase()}</span>
@@ -171,8 +171,6 @@ function ReaderPanel({ readerId, setConnection, baud, setBaud, readerMode, setRe
 }
 
 function ControlPanel({ setConnection, logLevel, setLogLevel, onUpdateConfig, className, readerOutput, clearReaderOutput, log, setLog }) {
-  const [degrees, setDegrees] = useState(90);
-  const [commandInput, setCommandInput] = useState("");
 
   const send = async (cmd, arg, timeoutMs) => {
     if (typeof clearReaderOutput === "function") {
@@ -192,24 +190,6 @@ function ControlPanel({ setConnection, logLevel, setLogLevel, onUpdateConfig, cl
     setConnection(res.ok);
   };
 
-  const sendCustomCommand = async () => {
-    const trimmed = String(commandInput || "").trim();
-    if (!trimmed) {
-      setLog("Please enter a command.");
-      return;
-    }
-
-    const [cmd, ...rest] = trimmed.split(/\s+/);
-    const arg = rest.length > 0 ? rest.join(" ") : undefined;
-    await send(cmd, arg);
-  };
-
-  const handleCommandKeyDown = (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      sendCustomCommand();
-    }
-  };
 
   return (
     <section className={`panel ${className || ""}`}>
@@ -217,14 +197,23 @@ function ControlPanel({ setConnection, logLevel, setLogLevel, onUpdateConfig, cl
         <h3>Control</h3>
       </div>
 
-      <div className="panel-row panel-row-wrap">
-        <button className="button-secondary" onClick={() => send("getconfig")}>Get Config</button>
-        <button className="button-secondary" onClick={() => send("getloglevel")}>Get Log Level</button>
-        <button className="button-secondary button-reboot" onClick={() => send("reboot")}>Reboot</button>
-      </div>
 
-      <div className="panel-row">
-        <label>
+      <div className="panel-log">
+        {readerOutput ? <code>{readerOutput}</code> : <code>{log}</code>}
+      </div>
+    </section>
+  );
+}
+
+function ActionPanel({ onGetConfig, onGetLogLevel, onSaveEeprom, onRehome, logLevel, setLogLevel, onSetLogLevel, motorDegrees, setMotorDegrees, onMotorMove, commandInput, setCommandInput, onSendCommand }) {
+  return (
+    <section className="panel panel-top">
+      <div className="panel-row panel-row-wrap">
+        <button className="button-secondary" onClick={onGetConfig}>Get Config</button>
+        <button className="button-secondary" onClick={onGetLogLevel}>Get Log Level</button>
+        <button className="button-secondary" onClick={onSaveEeprom}>Save EEPROM</button>
+        <button className="button-secondary button-reboot" onClick={onRehome}>Rehome</button>
+        <label className="action-label action-label-inline">
           Log Level
           <select value={logLevel} onChange={(e) => setLogLevel(e.target.value)}>
             <option value="error">Error</option>
@@ -234,48 +223,21 @@ function ControlPanel({ setConnection, logLevel, setLogLevel, onUpdateConfig, cl
             <option value="trace">Trace</option>
           </select>
         </label>
-        <button className="button-primary" onClick={() => send("setloglevel", logLevel)}>
+        <button className="button-primary" onClick={onSetLogLevel}>
           Set Log Level
         </button>
-      </div>
-
-      <div className="panel-row">
-        <label>
-          Motor Degrees
-          <input type="number" value={degrees} onChange={(e) => setDegrees(e.target.value)} />
-        </label>
-        <button className="button-primary" onClick={() => send("motormove", degrees)}>
-          Move Motor
-        </button>
-      </div>
-
-      <div className="panel-row">
-        <button className="button-secondary" onClick={() => send("saveeeprom")}>Save EEPROM</button>
-        <button className="button-secondary" onClick={() => send("rehome", undefined, 10000)}>Rehome</button>
-      </div>
-
-      <div className="panel-row">
-        <label style={{ flex: 1, minWidth: 0 }}>
-          Command Input
+        <label className="action-label action-label-inline">
+          Command
           <input
             type="text"
             value={commandInput}
             onChange={(e) => setCommandInput(e.target.value)}
-            onKeyDown={handleCommandKeyDown}
-            placeholder="Example: reset arg1 arg2"
+            placeholder="cmd args"
           />
         </label>
-        <button className="button-primary" onClick={sendCustomCommand}>
+        <button className="button-primary" onClick={onSendCommand}>
           Send Cmd
         </button>
-      </div>
-
-      <div className="panel-log">
-        {readerOutput ? (
-          <code>{readerOutput}</code>
-        ) : (
-          <code>{log}</code>
-        )}
       </div>
     </section>
   );
@@ -513,6 +475,8 @@ export default function App() {
 
   const [reader0, setReader0] = useState({ baud: "9600", type: "wiegand" });
   const [reader1, setReader1] = useState({ baud: "9600", type: "wiegand" });
+  const [motorDegrees, setMotorDegrees] = useState("90");
+  const [commandInput, setCommandInput] = useState("");
   const [controlReaderOutput, setControlReaderOutput] = useState("");
   const [controlLog, setControlLog] = useState("");
 
@@ -540,6 +504,68 @@ export default function App() {
     console.log("Normalized config:", normalized);
   };
 
+  const handleGetConfig = async () => {
+    const res = await sendCommand("getconfig");
+    setControlLog(JSON.stringify(res.data, null, 2));
+    if (res.ok) {
+      updateReaders(res.data || {});
+      setConnected(true);
+    } else {
+      setConnected(false);
+    }
+  };
+
+  const handleGetLogLevel = async () => {
+    const res = await sendCommand("getloglevel");
+    setControlLog(JSON.stringify(res.data, null, 2));
+    if (res.ok) {
+      const level = extractLogLevel(res.data);
+      if (level) setLogLevel(level);
+      setConnected(true);
+    } else {
+      setConnected(false);
+    }
+  };
+
+  const handleSaveEeprom = async () => {
+    const res = await sendCommand("saveeeprom");
+    setControlLog(JSON.stringify(res.data, null, 2));
+    setConnected(res.ok);
+  };
+
+  const handleSetLogLevel = async () => {
+    const res = await sendCommand("setloglevel", logLevel);
+    setControlLog(JSON.stringify(res.data, null, 2));
+    setConnected(res.ok);
+  };
+
+  const handleMotorMove = async () => {
+    const res = await sendCommand("motormove", motorDegrees);
+    setControlLog(JSON.stringify(res.data, null, 2));
+    setConnected(res.ok);
+  };
+
+  const handleSendCommand = async () => {
+    const trimmed = String(commandInput || "").trim();
+    if (!trimmed) {
+      setControlLog("Please enter a command.");
+      return;
+    }
+
+    const [cmd, ...rest] = trimmed.split(/\s+/);
+    const arg = rest.length > 0 ? rest.join(" ") : undefined;
+    const res = await sendCommand(cmd, arg);
+    setControlLog(JSON.stringify(res.data, null, 2));
+    setControlReaderOutput("");
+    setConnected(res.ok);
+  };
+
+  const handleRehome = async () => {
+    const res = await sendCommand("rehome", undefined, 10000);
+    setControlLog(JSON.stringify(res.data, null, 2));
+    setConnected(res.ok);
+  };
+
   useEffect(() => {
     async function loadInitialState() {
       const configRes = await sendCommand("getconfig");
@@ -565,7 +591,6 @@ export default function App() {
       <header className="app-header">
         <div>
           <p className="eyebrow">Red Diamond Fixture</p>
-          <h1>Red Diamond TF Dashboard</h1>
         </div>
         <div className={`status-pill ${connected ? "status-online" : "status-offline"}`}>
           {connected ? "Connected" : "Disconnected"}
@@ -574,6 +599,7 @@ export default function App() {
 
       <main className="panel-grid">
         <ReaderPanel
+          className="reader-panel"
           readerId={0}
           setConnection={setConnected}
           baud={reader0.baud}
@@ -587,6 +613,7 @@ export default function App() {
         />
 
         <ReaderPanel
+          className="reader-panel"
           readerId={1}
           setConnection={setConnected}
           baud={reader1.baud}
@@ -597,6 +624,22 @@ export default function App() {
             setControlReaderOutput(`Reader ${id}: ${JSON.stringify(data, null, 2)}`);
           }}
           clearCommandOutput={() => setControlLog("")}
+        />
+
+        <ActionPanel
+          onGetConfig={handleGetConfig}
+          onGetLogLevel={handleGetLogLevel}
+          onSaveEeprom={handleSaveEeprom}
+          onRehome={handleRehome}
+          logLevel={logLevel}
+          setLogLevel={setLogLevel}
+          onSetLogLevel={handleSetLogLevel}
+          motorDegrees={motorDegrees}
+          setMotorDegrees={setMotorDegrees}
+          onMotorMove={handleMotorMove}
+          commandInput={commandInput}
+          setCommandInput={setCommandInput}
+          onSendCommand={handleSendCommand}
         />
 
         <ControlPanel
