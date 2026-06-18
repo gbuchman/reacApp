@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./App.css";
 
-const API_URL = `http://${window.location.hostname}:3300/commands`;
-const LOGS_STREAM_URL = `http://${window.location.hostname}:3300/logs/stream`;
-const LOGS_TAIL_URL = `http://${window.location.hostname}:3300/logs/tail`;
+const API_URL = `http://192.168.2.49:3300/commands`;
+//const LOGS_STREAM_URL = `http://${window.location.hostname}:3300/logs/stream`;
+//const LOGS_TAIL_URL = `http://${window.location.hostname}:3300/logs/tail`;
+const LOGS_STREAM_URL = `http://192.168.2.49:3300/logs/stream`;
+const LOGS_TAIL_URL = `http://192.168.2.49:3300/logs/tail`;
 
 async function sendCommand(cmd, arg, timeoutMs = 5000) {
   const controller = new AbortController();
@@ -18,9 +20,26 @@ async function sendCommand(cmd, arg, timeoutMs = 5000) {
     });
 
     clearTimeout(timeout);
-    const data = await res.json();
+
+    const text = await res.text();
+    let data;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (parseError) {
+      data = text;
+    }
+
+    if (!res.ok) {
+      const errorString = typeof data === "string" ? data : JSON.stringify(data, null, 2);
+      return {
+        ok: false,
+        data: `HTTP ${res.status} ${res.statusText}${errorString ? `: ${errorString}` : ""}`,
+      };
+    }
+
     return { ok: true, data };
   } catch (err) {
+    clearTimeout(timeout);
     return { ok: false, data: err.name === "AbortError" ? "Timeout" : err.message };
   }
 }
@@ -88,17 +107,23 @@ function stripAnsiCodes(line) {
 
 
 
-function ReaderPanel({ readerId, setConnection, baud, setBaud, readerMode, setReaderMode }) {
-  const [log, setLog] = useState("");
+function ReaderPanel({ readerId, setConnection, baud, setBaud, readerMode, setReaderMode, onReaderOutput, clearCommandOutput }) {
   const baudOptions = ["9600", "38400", "57600", "115200"];
   const modeOptions = ["wiegand", "osdp"];
   const normalizedMode = readerMode ? String(readerMode).toLowerCase() : "";
-  const normalizedBaud = readerMode ? String(baud) : "";
 
   const send = async (cmd, arg) => {
+    if (typeof clearCommandOutput === "function") {
+      clearCommandOutput();
+    }
+    if (typeof onReaderOutput === "function") {
+      onReaderOutput(readerId, "");
+    }
     const res = await sendCommand(cmd, arg);
-    setLog(JSON.stringify(res.data, null, 2));
     setConnection(res.ok);
+    if (typeof onReaderOutput === "function") {
+      onReaderOutput(readerId, res.data);
+    }
   };
 
   return (
@@ -141,20 +166,19 @@ function ReaderPanel({ readerId, setConnection, baud, setBaud, readerMode, setRe
           Set Mode
         </button>
       </div>
-
-      <div className="panel-log">
-        <code>{log || "No response yet."}</code>
-      </div>
     </section>
   );
 }
 
-function ControlPanel({ setConnection, logLevel, setLogLevel, onUpdateConfig, className }) {
+function ControlPanel({ setConnection, logLevel, setLogLevel, onUpdateConfig, className, readerOutput, clearReaderOutput, log, setLog }) {
   const [degrees, setDegrees] = useState(90);
-  const [log, setLog] = useState("");
   const [commandInput, setCommandInput] = useState("");
 
   const send = async (cmd, arg, timeoutMs) => {
+    if (typeof clearReaderOutput === "function") {
+      clearReaderOutput();
+    }
+    setLog("");
     const res = await sendCommand(cmd, arg, timeoutMs);
     if (cmd === "getconfig" && res.ok && typeof onUpdateConfig === "function") {
       const payload = extractConfigPayload(res.data);
@@ -247,7 +271,11 @@ function ControlPanel({ setConnection, logLevel, setLogLevel, onUpdateConfig, cl
       </div>
 
       <div className="panel-log">
-        <code>{log || "No response yet."}</code>
+        {readerOutput ? (
+          <code>{readerOutput}</code>
+        ) : (
+          <code>{log}</code>
+        )}
       </div>
     </section>
   );
@@ -485,6 +513,8 @@ export default function App() {
 
   const [reader0, setReader0] = useState({ baud: "9600", type: "wiegand" });
   const [reader1, setReader1] = useState({ baud: "9600", type: "wiegand" });
+  const [controlReaderOutput, setControlReaderOutput] = useState("");
+  const [controlLog, setControlLog] = useState("");
 
   const updateReaders = (config) => {
     const normalized = normalizeConfig(config);
@@ -550,6 +580,10 @@ export default function App() {
           setBaud={(v) => setReader0({ ...reader0, baud: v })}
           readerMode={reader0.type}
           setReaderMode={(v) => setReader0({ ...reader0, type: v })}
+          onReaderOutput={(id, data) => {
+            setControlReaderOutput(`Reader ${id}: ${JSON.stringify(data, null, 2)}`);
+          }}
+          clearCommandOutput={() => setControlLog("")}
         />
 
         <ReaderPanel
@@ -559,6 +593,10 @@ export default function App() {
           setBaud={(v) => setReader1({ ...reader1, baud: v })}
           readerMode={reader1.type}
           setReaderMode={(v) => setReader1({ ...reader1, type: v })}
+          onReaderOutput={(id, data) => {
+            setControlReaderOutput(`Reader ${id}: ${JSON.stringify(data, null, 2)}`);
+          }}
+          clearCommandOutput={() => setControlLog("")}
         />
 
         <ControlPanel
@@ -566,6 +604,10 @@ export default function App() {
           setConnection={setConnected}
           logLevel={logLevel}
           setLogLevel={setLogLevel}
+          readerOutput={controlReaderOutput}
+          clearReaderOutput={() => setControlReaderOutput("")}
+          log={controlLog}
+          setLog={setControlLog}
           onUpdateConfig={(config) => {
             updateReaders(config);
             if (config.logLevel) setLogLevel(String(config.logLevel));

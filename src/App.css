@@ -183,18 +183,35 @@ body {
   border: 1px solid rgba(148, 163, 184, 0.12);
   border-radius: 16px;
   padding: 14px;
-  min-height: 92px;
-  max-height: 158px;
-  height: 120px;
+  min-height: 120px;
+  max-height: 260px;
   font-size: 0.92rem;
   line-height: 1.5;
   color: #e2e8f0;
   overflow-x: auto;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.panel-log-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-log-block strong {
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 
 .panel-log code {
   white-space: pre-wrap;
+  display: block;
+  color: #e2e8f0;
 }
 
 @media (max-width: 740px) {
